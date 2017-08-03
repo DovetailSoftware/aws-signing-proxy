@@ -22,6 +22,7 @@ import (
 )
 
 var targetFlag = flag.String("target", os.Getenv("AWS_ES_TARGET"), "target url to proxy to")
+var serviceNameFlag = flag.String("service-name", os.Getenv("AWS_ES_TARGET"), "AWS service name to use for signing the request (default: es)")
 var portFlag = flag.Int("port", 8080, "listening port for proxy")
 var regionFlag = flag.String("region", os.Getenv("AWS_REGION"), "AWS region for credentials")
 var flushInterval = flag.Duration("flush-interval", 0, "Flush interval to flush to the client while copying the response body.")
@@ -29,7 +30,7 @@ var idleConnTimeout = flag.Duration("idle-conn-timeout", 90*time.Second, "the ma
 var dialTimeout = flag.Duration("dial-timeout", 30*time.Second, "The maximum amount of time a dial will wait for a connect to complete.")
 
 // NewSigningProxy proxies requests to AWS services which require URL signing using the provided credentials
-func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region string) *httputil.ReverseProxy {
+func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region string, serviceName string) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		// Rewrite request to desired server host
 		req.URL.Scheme = target.Scheme
@@ -43,7 +44,7 @@ func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region str
 		config := aws.NewConfig().WithCredentials(creds).WithRegion(region)
 
 		clientInfo := metadata.ClientInfo{
-			ServiceName: "es",
+			ServiceName: serviceName,
 		}
 
 		operation := &request.Operation{
@@ -155,8 +156,13 @@ func main() {
 		region = "us-west-2"
 	}
 
+	serviceName := *serviceNameFlag
+	if len(serviceName) == 0 {
+		serviceName = "es"
+	}
+
 	// Start the proxy server
-	proxy := NewSigningProxy(targetURL, creds, region)
+	proxy := NewSigningProxy(targetURL, creds, region, serviceName)
 	listenString := fmt.Sprintf(":%v", *portFlag)
 	fmt.Printf("Listening on %v\n", listenString)
 	http.ListenAndServe(listenString, proxy)

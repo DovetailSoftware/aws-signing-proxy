@@ -123,6 +123,7 @@ func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region str
 			response.Status = "200 OK"
 			response.StatusCode = 200
 		}
+		return response;
 	}
 
 	return &httputil.ReverseProxy{

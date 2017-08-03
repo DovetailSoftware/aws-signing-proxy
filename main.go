@@ -118,7 +118,7 @@ func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region str
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
-	modifyResponse := func(response *http.Response) {
+	modifyResponse := func(response *http.Response) error {
 		if( response.Request.URL.Path == "/healthcheck" ){
 			response.Status = "200 OK"
 			response.StatusCode = 200

@@ -118,10 +118,18 @@ func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region str
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
 
+	modifyResponse := func(response *http.Response) {
+		if( response.Request.URL.Path == "/healthcheck" ){
+			response.Status = "200 OK"
+			response.StatusCode = 200
+		}
+	}
+
 	return &httputil.ReverseProxy{
 		Director:      director,
 		FlushInterval: *flushInterval,
 		Transport:     transport,
+		ModifyResponse: modifyResponse,
 	}
 }
 

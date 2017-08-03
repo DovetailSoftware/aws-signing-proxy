@@ -32,10 +32,15 @@ var dialTimeout = flag.Duration("dial-timeout", 30*time.Second, "The maximum amo
 // NewSigningProxy proxies requests to AWS services which require URL signing using the provided credentials
 func NewSigningProxy(target *url.URL, creds *credentials.Credentials, region string, serviceName string) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
+		log.Print("URL: " + req.URL.Path)
+  		log.Print("Scheme: " + req.URL.Scheme)
+  		log.Print("Host: " + req.URL.Host)
+
 		// Rewrite request to desired server host
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.Host = target.Host
+		
 
 		// To perform the signing, we leverage aws-sdk-go
 		// aws.request performs more functions than we need here
@@ -174,5 +179,8 @@ func main() {
 	proxy := NewSigningProxy(targetURL, creds, region, serviceName)
 	listenString := fmt.Sprintf(":%v", *portFlag)
 	fmt.Printf("Listening on %v\n", listenString)
-	http.ListenAndServe(listenString, proxy)
+	error := http.ListenAndServe(listenString, proxy)
+	if(error != nil) {
+        log.Fatal(error)
+    }
 }
